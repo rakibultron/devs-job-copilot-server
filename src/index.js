@@ -1,4 +1,5 @@
 const express = require("express");
+const Redis = require("ioredis");
 const path = require("path");
 const mongoose = require("mongoose");
 require("dotenv").config({ path: path.resolve(__dirname, "../.env") });
@@ -227,6 +228,25 @@ mongoose
     console.error("MongoDB connection error: ", err);
   });
 
+// Redis server connection options
+const redisOptions = {
+  host: process.env.REDIS_HOST, // Replace with your Redis server host
+  port: process.env.REDIS_PORT, // Default Redis port
+  username: process.env.REDIS_USER_NAME, // Your Redis username
+  password: process.env.REDIS_PASSWORD,
+};
+
+const redis = new Redis(redisOptions);
+// Check the connection status
+redis.on("connect", () => {
+  console.log("Connected to Redis database.");
+});
+
+// Check for errors during connection
+redis.on("error", (err) => {
+  console.error("Error connecting to Redis:", err);
+});
+
 const run = async (techIndex, countryIndex) => {
   function generateRandomNumber() {
     // Generate a random number between 0 and 1
@@ -248,17 +268,17 @@ const run = async (techIndex, countryIndex) => {
   console.log(randomValue);
   const server = new ProxyChain.Server({ port: randomValue });
   await server.listen();
-  if (techIndex >= techs.length) {
-    console.log("Scraping completed.", jobs.length);
+  //   if (techIndex >= techs.length) {
+  //     console.log("Scraping completed.", jobs.length);
 
-    return;
-  }
+  //     return;
+  //   }
 
-  if (countryIndex >= countries.length) {
-    // Move to the next technology when all countries for the current technology are done
-    run(techIndex + 1, 0);
-    return;
-  }
+  //   if (countryIndex >= countries.length) {
+  //     // Move to the next technology when all countries for the current technology are done
+  //     run(techIndex + 1, 0);
+  //     return;
+  //   }
 
   const tech = techs[techIndex];
   const country = countries[countryIndex];
@@ -368,10 +388,44 @@ const run = async (techIndex, countryIndex) => {
     await browser.close();
     console.error(`An error occurred for ${tech} in ${country}:`, error);
   }
-
+  // Save the current indices as checkpoints in Redis
+  await saveCheckpoints(techIndex, countryIndex);
   // Recursively move to the next country
   run(techIndex, countryIndex + 1);
 };
 
 // Start the recursion from the first technology and the first country
-run(0, 0);
+// run(0, 0);
+
+// Function to load the last saved indices from Redis
+async function loadCheckpoints() {
+  const [techIndex, countryIndex] = await redis.mget(
+    "techIndex",
+    "countryIndex"
+  );
+  return {
+    techIndex: techIndex ? parseInt(techIndex, 10) : 0,
+    countryIndex: countryIndex ? parseInt(countryIndex, 10) : 0,
+  };
+}
+
+// Function to save the current indices to Redis
+async function saveCheckpoints(techIndex, countryIndex) {
+  await redis
+    .multi()
+    .set("techIndex", techIndex)
+    .set("countryIndex", countryIndex)
+    .exec();
+}
+
+// Load the last saved indices (checkpoints) on server startup
+loadCheckpoints()
+  .then(({ techIndex, countryIndex }) => {
+    // Start the recursion from the last saved indices
+    run(techIndex, countryIndex);
+  })
+  .catch((error) => {
+    console.error("Error loading checkpoints:", error);
+    // Start the recursion from the beginning if there is an error loading checkpoints
+    run(0, 0);
+  });
