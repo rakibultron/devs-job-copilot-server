@@ -12,7 +12,7 @@ exports.autoScroll = async (page) => {
           clearInterval(timer);
           resolve();
         }
-      }, 500);
+      }, 200);
     });
   });
 };
