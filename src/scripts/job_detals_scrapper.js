@@ -8,14 +8,21 @@ const saveJobInDb = async () => {
       const isJobExist = await Job.findOne({ jobId: item.jobId }).exec();
 
       if (isJobExist) {
-        console.log("this job already exist on db ===== >", isJobExist);
+        const jobfound = await Job.findOneAndUpdate(
+          {
+            jobId: item.jobId,
+          },
+          item
+        ).exec();
+
+        console.log("this job already exist on db ===== >", jobfound);
       } else {
         const job = await new Job(item).save();
         console.log(job);
       }
     });
   } catch (error) {
-    // console.log(error);
+    console.log(error);
   }
 };
 const scrapjobDetails = async (page) => {
@@ -125,7 +132,7 @@ const scrapjobDetails = async (page) => {
     // console.log("job object ===>", jobObj);
     jobs.push(jobObj);
     saveJobInDb();
-    jobs = [];
+    // jobs = [];
   } catch (error) {
     console.log("something wrong ==================>>>>>>", error);
   }
