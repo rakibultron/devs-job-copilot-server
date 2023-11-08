@@ -1,18 +1,19 @@
 const express = require("express");
 const Redis = require("ioredis");
+
 const path = require("path");
 const mongoose = require("mongoose");
 require("dotenv").config({ path: path.resolve(__dirname, "../.env") });
-const puppeteer = require("puppeteer-extra");
-const ProxyChain = require("proxy-chain");
-const StealthPlugin = require("puppeteer-extra-plugin-stealth");
-const { autoScroll } = require("./helpers/autoscroll");
-const { scrapjobDetails, jobs } = require("./scripts/job_detals_scrapper");
 
-puppeteer.use(StealthPlugin());
-puppeteer.use(require("puppeteer-extra-plugin-anonymize-ua")());
+const queue = require("./queues/job_scrapper_queue");
 
-const techs = ["react.js", "node.js", "mern stack"];
+const techs = [
+  "express.js",
+  "react.js",
+  "node.js",
+  "mern stack",
+  "javascript developer",
+];
 const countries = [
   "Afghanistan",
   "Albania",
@@ -38,7 +39,7 @@ const countries = [
   "Bosnia and Herzegovina",
   "Botswana",
   "Brazil",
-  "Brunei",
+  "Brunei ",
   "Bulgaria",
   "Burkina Faso",
   "Burundi",
@@ -59,7 +60,7 @@ const countries = [
   "Cuba",
   "Cyprus",
   "Czechia (Czech Republic)",
-  "Democratic Republic of the Congo (Congo-Kinshasa)",
+  "Democratic Republic of the Congo",
   "Denmark",
   "Djibouti",
   "Dominica",
@@ -70,7 +71,7 @@ const countries = [
   "Equatorial Guinea",
   "Eritrea",
   "Estonia",
-  "Eswatini",
+  'Eswatini (fmr. "Swaziland")',
   "Ethiopia",
   "Fiji",
   "Finland",
@@ -142,7 +143,7 @@ const countries = [
   "Niger",
   "Nigeria",
   "North Korea",
-  "North Macedonia (formerly Macedonia)",
+  "North Macedonia",
   "Norway",
   "Oman",
   "Pakistan",
@@ -228,11 +229,10 @@ mongoose
     console.error("MongoDB connection error: ", err);
   });
 
-// Redis server connection options
 const redisOptions = {
-  host: process.env.REDIS_HOST, // Replace with your Redis server host
-  port: process.env.REDIS_PORT, // Default Redis port
-  username: process.env.REDIS_USER_NAME, // Your Redis username
+  host: process.env.REDIS_HOST,
+  port: process.env.REDIS_PORT,
+  username: process.env.REDIS_USER_NAME,
   password: process.env.REDIS_PASSWORD,
 };
 
@@ -247,185 +247,9 @@ redis.on("error", (err) => {
   console.error("Error connecting to Redis:", err);
 });
 
-const run = async (techIndex, countryIndex) => {
-  function generateRandomNumber() {
-    // Generate a random number between 0 and 1
-    const randomNumber = Math.random();
-
-    // Scale the random number to be between 2000 and 5000
-    const min = 2000;
-    const max = 4000;
-    const scaledNumber = min + randomNumber * (max - min);
-
-    // Round the result to an integer if needed
-    const roundedNumber = Math.round(scaledNumber);
-
-    return roundedNumber;
+for (const tech of techs) {
+  for (const country of countries) {
+    const data = { tech, country };
+    queue.add(data, { removeOnComplete: true, removeOnFail: true });
   }
-
-  // Call the function to generate a random number
-  const randomValue = generateRandomNumber();
-  console.log(randomValue);
-  const server = new ProxyChain.Server({ port: randomValue });
-  await server.listen();
-  //   if (techIndex >= techs.length) {
-  //     console.log("Scraping completed.", jobs.length);
-
-  //     return;
-  //   }
-
-  //   if (countryIndex >= countries.length) {
-  //     // Move to the next technology when all countries for the current technology are done
-  //     run(techIndex + 1, 0);
-  //     return;
-  //   }
-
-  const tech = techs[techIndex];
-  const country = countries[countryIndex];
-  const proxyUrl = `http://localhost:${randomValue}`;
-  const browser = await puppeteer.launch({
-    headless: false,
-    userDataDir: "/tmp/myChromeSession",
-    args: [
-      "--disable-features=Cookies",
-      "--disable-web-security",
-      "--disable-features=IsolateOrigins,site-per-process",
-      "--disable-site-isolation-trials",
-      "--start-maximized",
-      "--incognito",
-      `--proxy-server=${proxyUrl}`,
-      "--disable-extensions",
-      "--disable-plugins",
-      "--disable-sync",
-      "--disable-local-storage",
-      "--disable-session-storage",
-    ],
-  });
-  const page = await browser.newPage();
-  await page.setDefaultNavigationTimeout(90000);
-
-  await page.setRequestInterception(true);
-
-  page.on("request", (request) => {
-    if (
-      request.resourceType() === "cookie" ||
-      request.resourceType() === "setcookie"
-    ) {
-      console.log("cookie blocked =========================> :)");
-      request.abort(); // Block cookie requests
-    } else {
-      request.continue();
-    }
-  });
-
-  await page.goto("chrome://settings/cookies");
-  await page.evaluate(() =>
-    document
-      .querySelector("settings-ui")
-      .shadowRoot.querySelector("settings-main")
-      .shadowRoot.querySelector("settings-basic-page")
-      .shadowRoot.querySelector("settings-section settings-privacy-page")
-      .shadowRoot.querySelector("settings-cookies-page")
-      .shadowRoot.querySelector("#blockThirdParty")
-      .shadowRoot.querySelector("#label")
-      .click()
-  );
-
-  try {
-    await page.goto("https://www.linkedin.com");
-    await page.waitForSelector(
-      "[data-tracking-control-name='guest_homepage-basic_guest_nav_menu_jobs']"
-    );
-    await page.click(
-      "[data-tracking-control-name='guest_homepage-basic_guest_nav_menu_jobs']"
-    );
-    await page.waitForSelector("#job-search-bar-keywords");
-    await page.type("#job-search-bar-keywords", tech, { delay: 50 });
-    await page.waitForSelector("#job-search-bar-location");
-    await page.click("#job-search-bar-location");
-    await page.waitForSelector(
-      "section.typeahead-input:nth-child(2) > button:nth-child(3) > icon:nth-child(2)"
-    );
-    await page.waitForTimeout(2000);
-    await page.click(
-      "section.typeahead-input:nth-child(2) > button:nth-child(3) > icon:nth-child(2)"
-    );
-    await page.type("#job-search-bar-location", country, { delay: 50 });
-    await page.waitForSelector(
-      "button.base-search-bar__submit-btn:nth-child(5)"
-    );
-    await page.click("button.base-search-bar__submit-btn:nth-child(5)");
-    await page.waitForTimeout(2000);
-    await autoScroll(page);
-
-    const jobElements = await page.$$(".jobs-search__results-list > li");
-    console.log(
-      `Found ${jobElements.length} job listings for ${tech} in ${country}`
-    );
-
-    const linkSelectors = [];
-
-    for (const element of jobElements) {
-      await element.click();
-      await page.waitForTimeout(1500);
-      await scrapjobDetails(page);
-    }
-
-    // Use Promise.all() to evaluate the links and log them
-    const links = await Promise.all(
-      linkSelectors.map((linkSelector) => {
-        return page.evaluate((el) => el.getAttribute("href"), linkSelector);
-      })
-    );
-    //   console.log(links);
-
-    // await scrapjobDetails(page, links, browser);
-    await page.waitForTimeout(500);
-    await page.close();
-    await browser.close();
-  } catch (error) {
-    await page.close();
-    await browser.close();
-    console.error(`An error occurred for ${tech} in ${country}:`, error);
-  }
-  // Save the current indices as checkpoints in Redis
-  await saveCheckpoints(techIndex, countryIndex);
-  // Recursively move to the next country
-  run(techIndex, countryIndex + 1);
-};
-
-// Start the recursion from the first technology and the first country
-// run(0, 0);
-
-// Function to load the last saved indices from Redis
-async function loadCheckpoints() {
-  const [techIndex, countryIndex] = await redis.mget(
-    "techIndex",
-    "countryIndex"
-  );
-  return {
-    techIndex: techIndex ? parseInt(techIndex, 10) : 0,
-    countryIndex: countryIndex ? parseInt(countryIndex, 10) : 0,
-  };
 }
-
-// Function to save the current indices to Redis
-async function saveCheckpoints(techIndex, countryIndex) {
-  await redis
-    .multi()
-    .set("techIndex", techIndex)
-    .set("countryIndex", countryIndex)
-    .exec();
-}
-
-// Load the last saved indices (checkpoints) on server startup
-loadCheckpoints()
-  .then(({ techIndex, countryIndex }) => {
-    // Start the recursion from the last saved indices
-    run(techIndex, countryIndex);
-  })
-  .catch((error) => {
-    console.error("Error loading checkpoints:", error);
-    // Start the recursion from the beginning if there is an error loading checkpoints
-    run(0, 0);
-  });
