@@ -9,30 +9,10 @@ const puppeteer = require("puppeteer-extra");
 const ProxyChain = require("proxy-chain");
 const StealthPlugin = require("puppeteer-extra-plugin-stealth");
 const { autoScroll } = require("../helpers/autoscroll");
-const { scrapjobDetails, jobs } = require("../scripts/job_detals_scrapper");
+const { scrapjobDetails } = require("../scripts/job_detals_scrapper");
 
 puppeteer.use(StealthPlugin());
 puppeteer.use(require("puppeteer-extra-plugin-anonymize-ua")());
-
-const techs = ["react.js", "express.js"];
-const countries = ["Afghanistan", "Albania"];
-
-console.log("redis check ====>", process.env.REDIS_DB_NAME);
-// Connect to MongoDB
-mongoose
-  .connect(
-    `mongodb+srv://${process.env.DB_USER_NAME}:${process.env.DB_PASSWORD}@my-cluster.wlkgtiv.mongodb.net/${process.env.DB_NAME}?retryWrites=true&w=majority`,
-    {
-      //   useNewUrlParser: true,
-      //   useUnifiedTopology: true,
-    }
-  )
-  .then(() => {
-    console.log(`app connected with ${process.env.DB_NAME} database 🚀`);
-  })
-  .catch((err) => {
-    console.error("MongoDB connection error: ", err);
-  });
 
 const redisOptions = {
   host: process.env.REDIS_HOST,
@@ -61,20 +41,10 @@ const queue = new Bull("scraper-queue", {
   },
 });
 
-for (const tech of techs) {
-  for (const country of countries) {
-    queue.add(
-      { tech, country },
-      { removeOnComplete: true, removeOnFail: true }
-    );
-    // console.log({ country, tech });
-  }
-}
-
 queue.process(async (job) => {
   const { tech, country } = await job.data;
 
-  //   console.log("from process===>", { tech, country });
+  console.log("from process===>", { tech, country });
   // Mark the job as completed
   //   await job.moveToCompleted();
 
@@ -122,14 +92,14 @@ queue.process(async (job) => {
       });
     });
   }
-  while (await isPortInUse(randomPort)) {
-    randomPort = generateRandomPort();
-  }
+  //   while (await isPortInUse(randomPort)) {
+  //     randomPort = generateRandomPort();
+  //   }
 
   // Call the function to generate a random number
 
-  const server = new ProxyChain.Server({ port: randomPort });
-  await server.listen();
+  //   const server = new ProxyChain.Server({ port: randomPort });
+  //   await server.listen();
   //   if (techIndex >= techs.length) {
   //     console.log("Scraping completed.", jobs.length);
 
@@ -144,7 +114,7 @@ queue.process(async (job) => {
 
   //   const tech = techs[techIndex];
   //   const country = countries[countryIndex];
-  const proxyUrl = `http://localhost:${randomValue}`;
+  //   const proxyUrl = `http://localhost:${randomValue}`;
   const browser = await puppeteer.launch({
     headless: false,
     userDataDir: "/tmp/myChromeSession",
@@ -166,34 +136,35 @@ queue.process(async (job) => {
   const page = await browser.newPage();
   await page.setDefaultNavigationTimeout(90000);
 
-  await page.setRequestInterception(true);
+  //   await page.setRequestInterception(true);
 
-  page.on("request", (request) => {
-    if (
-      request.resourceType() === "cookie" ||
-      request.resourceType() === "setcookie"
-    ) {
-      console.log("cookie blocked =========================> :)");
-      request.abort(); // Block cookie requests
-    } else {
-      request.continue();
-    }
-  });
+  //   page.on("request", (request) => {
+  //     if (
+  //       request.resourceType() === "cookie" ||
+  //       request.resourceType() === "setcookie"
+  //     ) {
+  //       console.log("cookie blocked =========================> :)");
+  //       request.abort(); // Block cookie requests
+  //     } else {
+  //       request.continue();
+  //     }
+  //   });
 
-  await page.goto("chrome://settings/cookies");
-  await page.evaluate(() =>
-    document
-      .querySelector("settings-ui")
-      .shadowRoot.querySelector("settings-main")
-      .shadowRoot.querySelector("settings-basic-page")
-      .shadowRoot.querySelector("settings-section settings-privacy-page")
-      .shadowRoot.querySelector("settings-cookies-page")
-      .shadowRoot.querySelector("#blockThirdParty")
-      .shadowRoot.querySelector("#label")
-      .click()
-  );
+  //   await page.goto("chrome://settings/cookies");
+  //   await page.evaluate(() =>
+  //     document
+  //       .querySelector("settings-ui")
+  //       .shadowRoot.querySelector("settings-main")
+  //       .shadowRoot.querySelector("settings-basic-page")
+  //       .shadowRoot.querySelector("settings-section settings-privacy-page")
+  //       .shadowRoot.querySelector("settings-cookies-page")
+  //       .shadowRoot.querySelector("#blockThirdParty")
+  //       .shadowRoot.querySelector("#label")
+  //       .click()
+  //   );
 
   try {
+    console.log("Opening linkedin.....");
     await page.goto("https://www.linkedin.com");
     await page.waitForSelector(
       "[data-tracking-control-name='guest_homepage-basic_guest_nav_menu_jobs']"
@@ -201,6 +172,7 @@ queue.process(async (job) => {
     await page.click(
       "[data-tracking-control-name='guest_homepage-basic_guest_nav_menu_jobs']"
     );
+    await page.waitForTimeout(randomValue);
     await page.waitForSelector("#job-search-bar-keywords");
     await page.type("#job-search-bar-keywords", tech, { delay: 25 });
     await page.waitForSelector("#job-search-bar-location");
@@ -252,6 +224,7 @@ queue.process(async (job) => {
     console.error(`An error occurred for ${tech} in ${country}:`, error);
   }
 });
+
 queue.on("error", function (error) {
   // An error occured.
   console.log("");
@@ -318,3 +291,5 @@ queue.on("drained", function () {
 queue.on("removed", function (job) {
   // A job successfully removed.
 });
+
+module.exports = queue;
