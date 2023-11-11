@@ -247,12 +247,12 @@ redis.on("error", (err) => {
   console.error("Error connecting to Redis:", err);
 });
 
-// for (const tech of techs) {
-//   for (const country of countries) {
-//     const data = { tech, country };
-//     queue.add(data, { removeOnComplete: true, removeOnFail: true });
-//   }
-// }
+for (const tech of techs) {
+  for (const country of countries) {
+    const data = { tech, country };
+    queue.add(data, { removeOnComplete: true, removeOnFail: true });
+  }
+}
 
 // Schedule to add entries to the queue every 6 hours
 cron.schedule("0 */6 * * *", () => {
