@@ -116,7 +116,7 @@ queue.process(async (job) => {
   //   const country = countries[countryIndex];
   //   const proxyUrl = `http://localhost:${randomValue}`;
   const browser = await puppeteer.launch({
-    headless: true,
+    headless: "new",
     userDataDir: "/tmp/myChromeSession",
     args: [
       "--disable-features=Cookies",
