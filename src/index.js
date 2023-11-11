@@ -1,6 +1,6 @@
 const express = require("express");
 const Redis = require("ioredis");
-
+const cron = require("node-cron");
 const path = require("path");
 const mongoose = require("mongoose");
 require("dotenv").config({ path: path.resolve(__dirname, "../.env") });
@@ -247,9 +247,29 @@ redis.on("error", (err) => {
   console.error("Error connecting to Redis:", err);
 });
 
-for (const tech of techs) {
-  for (const country of countries) {
-    const data = { tech, country };
-    queue.add(data, { removeOnComplete: true, removeOnFail: true });
+// for (const tech of techs) {
+//   for (const country of countries) {
+//     const data = { tech, country };
+//     queue.add(data, { removeOnComplete: true, removeOnFail: true });
+//   }
+// }
+
+// Schedule to add entries to the queue every 6 hours
+cron.schedule("0 */6 * * *", () => {
+  for (const tech of techs) {
+    for (const country of countries) {
+      const data = { tech, country };
+
+      // Check if the entry already exists in the queue
+      const isDuplicateEntry =
+        /* Implement logic to check if entry exists in the queue */
+
+        //   if (!isDuplicateEntry) {
+        //     queue.add(data, { removeOnComplete: true, removeOnFail: true });
+        //   }
+        queue.add(data, { removeOnComplete: true, removeOnFail: true });
+    }
   }
-}
+
+  console.log("Entries added to the queue.");
+});
