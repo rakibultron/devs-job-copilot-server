@@ -1,1 +1,19 @@
 # devs-job-copilot-server
+### Add Environment variables
+PORT
+
+DB_NAME
+
+DB_USER_NAME
+
+DB_PASSWORD
+
+REDIS_DB_NAME
+
+REDIS_HOST
+
+REDIS_PORT
+
+REDIS_USER_NAME
+
+REDIS_PASSWORD
