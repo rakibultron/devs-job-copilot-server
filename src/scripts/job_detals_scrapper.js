@@ -1,33 +1,34 @@
+const { StringToDate } = require("../helpers/date_time");
 const { extractId } = require("../helpers/uniqe_id_from_link");
+
 const Job = require("../models/JobModel");
 let jobs = [];
 
-const saveJobInDb = async () => {
+const saveJobInDb = async (jobObj) => {
+  //   console.log({ jobObj });
   try {
-    jobs.forEach(async (item) => {
-      const isJobExist = await Job.findOne({ jobId: item.jobId }).exec();
+    const isJobExist = await Job.findOne({ jobId: jobObj.jobId }).exec();
 
-      if (isJobExist) {
-        const jobfound = await Job.findOneAndUpdate(
-          {
-            jobId: item.jobId,
-          },
-          item
-        ).exec();
+    if (isJobExist) {
+      const jobfound = await Job.findOneAndUpdate(
+        {
+          jobId: jobObj.jobId,
+        },
+        jobObj
+      ).exec();
 
-        console.log("this job already exist on db ===== >", jobfound);
-      } else {
-        const job = await new Job(item).save();
-        console.log(job);
-      }
-    });
+      console.log("this job already exist on db =======>>>", jobfound);
+    } else {
+      const job = await new Job(jobObj).save();
+      console.log("New job found saved to db =======>>>", job);
+    }
   } catch (error) {
     console.log(error);
   }
 };
 const scrapjobDetails = async (page) => {
   try {
-    const randomValue = generateRandomNumber();
+    // const randomValue = generateRandomNumber();
     // await page.click(page);
     await page.waitForSelector(".show-more-less-button");
     const showMoreSelector = await page.$(".show-more-less-button");
@@ -120,7 +121,7 @@ const scrapjobDetails = async (page) => {
       jobTitle,
       company,
       location,
-      postedAt,
+      postedAt: StringToDate(postedAt),
       applicants,
       strength,
       jobtype,
@@ -130,11 +131,10 @@ const scrapjobDetails = async (page) => {
     };
 
     // console.log("job object ===>", jobObj);
-    jobs.push(jobObj);
-    saveJobInDb();
-    // jobs = [];
+    // jobs.push(jobObj);
+    await saveJobInDb(jobObj);
   } catch (error) {
-    console.log("something wrong ==================>>>>>>", error);
+    // console.log("something wrong ==================>>>>>>", error);
   }
 };
 

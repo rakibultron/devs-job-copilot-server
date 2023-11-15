@@ -247,12 +247,19 @@ redis.on("error", (err) => {
   console.error("Error connecting to Redis:", err);
 });
 
-for (const tech of techs) {
-  for (const country of countries) {
-    const data = { tech, country };
-    queue.add(data, { removeOnComplete: true, removeOnFail: true });
+const addToQueue = async () => {
+  for (const tech of techs) {
+    for (const country of countries) {
+      const data = { tech, country };
+      //   const data = "hello";
+      //   console.log({ data });
+
+      await queue.add(data, { removeOnComplete: true, removeOnFail: true });
+    }
   }
-}
+};
+
+// addToQueue();
 
 // Schedule to add entries to the queue every 6 hours
 cron.schedule("0 */6 * * *", () => {
@@ -260,14 +267,7 @@ cron.schedule("0 */6 * * *", () => {
     for (const country of countries) {
       const data = { tech, country };
 
-      // Check if the entry already exists in the queue
-      const isDuplicateEntry =
-        /* Implement logic to check if entry exists in the queue */
-
-        //   if (!isDuplicateEntry) {
-        //     queue.add(data, { removeOnComplete: true, removeOnFail: true });
-        //   }
-        queue.add(data, { removeOnComplete: true, removeOnFail: true });
+      queue.add(data, { removeOnComplete: true, removeOnFail: true });
     }
   }
 
