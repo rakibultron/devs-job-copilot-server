@@ -7,7 +7,7 @@ const JobSchema = Schema(
     jobTitle: mongoose.Schema.Types.String,
     company: mongoose.Schema.Types.String,
     location: mongoose.Schema.Types.String,
-    postedAt: mongoose.Schema.Types.String,
+    postedAt: mongoose.Schema.Types.Date,
     applicants: mongoose.Schema.Types.String,
     strength: mongoose.Schema.Types.String,
     jobtype: mongoose.Schema.Types.String,
