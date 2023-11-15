@@ -44,16 +44,7 @@ const queue = new Bull("scraper-queue", {
 queue.process(async (job) => {
   const { tech, country } = await job.data;
 
-  console.log("from process===>", { tech, country });
-  // Mark the job as completed
-  //   await job.moveToCompleted();
-
-  //   // Remove the job's data upon completion
-  //   await job.remove();
-
-  //   console.log("done");
-
-  function generateRandomNumber() {
+  async function generateRandomNumber() {
     // Generate a random number between 0 and 1
     const randomNumber = Math.random();
 
@@ -82,44 +73,13 @@ queue.process(async (job) => {
     return roundedNumber;
   }
 
-  const randomValue = generateRandomNumber();
-  let randomPort = generateRandomPort();
-  // Function to check if a port is in use
-  async function isPortInUse(port) {
-    return new Promise((resolve) => {
-      portscanner.checkPortStatus(port, "localhost", (error, status) => {
-        resolve(status === "open");
-      });
-    });
-  }
-  //   while (await isPortInUse(randomPort)) {
-  //     randomPort = generateRandomPort();
-  //   }
+  const randomValue = await generateRandomNumber();
 
-  // Call the function to generate a random number
-
-  //   const server = new ProxyChain.Server({ port: randomPort });
-  //   await server.listen();
-  //   if (techIndex >= techs.length) {
-  //     console.log("Scraping completed.", jobs.length);
-
-  //     return;
-  //   }
-
-  //   if (countryIndex >= countries.length) {
-  //     // Move to the next technology when all countries for the current technology are done
-  //     run(techIndex + 1, 0);
-  //     return;
-  //   }
-
-  //   const tech = techs[techIndex];
-  //   const country = countries[countryIndex];
-  //   const proxyUrl = `http://localhost:${randomValue}`;
   const browser = await puppeteer.launch({
     headless: "new",
-    userDataDir: "/tmp/myChromeSession",
+    // userDataDir: "/tmp/myChromeSession",
     args: [
-      "--disable-features=Cookies",
+      //   "--disable-features=Cookies",
       "--disable-web-security",
       "--disable-features=IsolateOrigins,site-per-process",
       "--disable-site-isolation-trials",
@@ -134,34 +94,7 @@ queue.process(async (job) => {
     ],
   });
   const page = await browser.newPage();
-  await page.setDefaultNavigationTimeout(90000);
-
-  //   await page.setRequestInterception(true);
-
-  //   page.on("request", (request) => {
-  //     if (
-  //       request.resourceType() === "cookie" ||
-  //       request.resourceType() === "setcookie"
-  //     ) {
-  //       console.log("cookie blocked =========================> :)");
-  //       request.abort(); // Block cookie requests
-  //     } else {
-  //       request.continue();
-  //     }
-  //   });
-
-  //   await page.goto("chrome://settings/cookies");
-  //   await page.evaluate(() =>
-  //     document
-  //       .querySelector("settings-ui")
-  //       .shadowRoot.querySelector("settings-main")
-  //       .shadowRoot.querySelector("settings-basic-page")
-  //       .shadowRoot.querySelector("settings-section settings-privacy-page")
-  //       .shadowRoot.querySelector("settings-cookies-page")
-  //       .shadowRoot.querySelector("#blockThirdParty")
-  //       .shadowRoot.querySelector("#label")
-  //       .click()
-  //   );
+  await page.setDefaultNavigationTimeout(9000);
 
   try {
     console.log("Opening linkedin.....");
@@ -198,7 +131,7 @@ queue.process(async (job) => {
       `Found ${jobElements.length} job listings for ${tech} in ${country}`
     );
 
-    const linkSelectors = [];
+
 
     for (const element of jobElements) {
       await element.click();
@@ -206,13 +139,7 @@ queue.process(async (job) => {
       await scrapjobDetails(page);
     }
 
-    // Use Promise.all() to evaluate the links and log them
-    const links = await Promise.all(
-      linkSelectors.map((linkSelector) => {
-        return page.evaluate((el) => el.getAttribute("href"), linkSelector);
-      })
-    );
-    //   console.log(links);
+ 
 
     // await scrapjobDetails(page, links, browser);
     await page.waitForTimeout(500);
@@ -226,24 +153,27 @@ queue.process(async (job) => {
 });
 
 queue.on("error", function (error) {
-  // An error occured.
-  console.log("");
+  console.log(" An error occured.", error);
 });
-//
+
 queue.on("waiting", function (jobId) {
-  // A Job is waiting to be processed as soon as a worker is idling.
-  console.log("");
+  //   console.log(
+  //     " // A Job is waiting to be processed as soon as a worker is idling. ==========>",
+  //     jobId
+  //   );
 });
 
 queue.on("active", function (job, jobPromise) {
-  // A job has started. You can use `jobPromise.cancel()`` to abort it.
-  console.log("");
+  // A job has started. You can use `jobPromise.cancel()`` to abort it
+  console.log("A job has started.========>>>>", job.data);
 });
 
 queue.on("stalled", function (job) {
-  // A job has been marked as stalled. This is useful for debugging job
   // workers that crash or pause the event loop.
-  console.log("");
+  console.log(
+    " // A job has been marked as stalled. This is useful for debugging job",
+    job.data
+  );
 });
 
 queue.on("lock-extension-failed", function (job, err) {
@@ -267,7 +197,7 @@ queue.on("completed", function (job, result) {
 });
 
 queue.on("failed", function (job, err) {
-  console.log(" A job failed with reason `err`!=============>", job.data);
+  console.log(" A job failed with reason `err`!=============>", err, job.data);
 });
 
 queue.on("paused", function () {
