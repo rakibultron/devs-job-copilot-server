@@ -10,6 +10,12 @@ const newDate = (postedAt) => {
   console.log(format(date, "hh:mm:ss a dd/LL/yyyy "));
   return date;
 };
+const StringToDate = (postedAt) => {
+  const timeStamps = sub(currentTime, { hours: parseInt(postedAt) });
+  const date = toDate(timeStamps);
+  //   console.log(format(date, "hh:mm:ss a dd/LL/yyyy"));
+  return date;
+};
 
-newDate(postedAt);
-module.exports = newDate();
+// newDate(postedAt);
+module.exports = { StringToDate };
