@@ -259,7 +259,7 @@ const addToQueue = async () => {
   }
 };
 
-addToQueue();
+// addToQueue();
 
 // Schedule to add entries to the queue every 6 hours
 cron.schedule("0 */6 * * *", () => {
