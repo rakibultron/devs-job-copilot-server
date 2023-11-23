@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const { ObjectId } = require("mongoose");
+const { sub, add, toDate, format, parseISO } = require("date-fns");
 const Schema = mongoose.Schema;
 
 const JobSchema = Schema(
@@ -7,7 +8,7 @@ const JobSchema = Schema(
     jobTitle: mongoose.Schema.Types.String,
     company: mongoose.Schema.Types.String,
     location: mongoose.Schema.Types.String,
-    postedAt: mongoose.Schema.Types.Date,
+    postedAt: { type: mongoose.Schema.Types.String },
     applicants: mongoose.Schema.Types.String,
     strength: mongoose.Schema.Types.String,
     jobtype: mongoose.Schema.Types.String,
