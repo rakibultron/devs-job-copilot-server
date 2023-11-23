@@ -1,7 +1,9 @@
 const { StringToDate } = require("../helpers/date_time");
+const extractNumberAndTime = require("../helpers/extractNumberAndTime");
 const { extractId } = require("../helpers/uniqe_id_from_link");
 
 const Job = require("../models/JobModel");
+const mailQueue = require("../queues/sendMailQueue");
 let jobs = [];
 
 const saveJobInDb = async (jobObj) => {
@@ -21,6 +23,8 @@ const saveJobInDb = async (jobObj) => {
     } else {
       const job = await new Job(jobObj).save();
       console.log("New job found saved to db =======>>>", job);
+
+      mailQueue.add(job, { removeOnComplete: true, removeOnFail: true });
     }
   } catch (error) {
     console.log(error);
@@ -121,7 +125,7 @@ const scrapjobDetails = async (page) => {
       jobTitle,
       company,
       location,
-      postedAt: StringToDate(postedAt),
+      postedAt: extractNumberAndTime(postedAt),
       applicants,
       strength,
       jobtype,
@@ -130,11 +134,11 @@ const scrapjobDetails = async (page) => {
       jobId,
     };
 
-    // console.log("job object ===>", jobObj);
+    console.log("job object ===>", jobObj);
     // jobs.push(jobObj);
-    await saveJobInDb(jobObj);
+    saveJobInDb(jobObj);
   } catch (error) {
-    // console.log("something wrong ==================>>>>>>", error);
+    console.log("something wrong ==================>>>>>>", error);
   }
 };
 

@@ -131,15 +131,11 @@ queue.process(async (job) => {
       `Found ${jobElements.length} job listings for ${tech} in ${country}`
     );
 
-
-
     for (const element of jobElements) {
       await element.click();
       await page.waitForTimeout(randomValue);
       await scrapjobDetails(page);
     }
-
- 
 
     // await scrapjobDetails(page, links, browser);
     await page.waitForTimeout(500);
