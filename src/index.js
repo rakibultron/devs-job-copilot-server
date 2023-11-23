@@ -2,7 +2,10 @@ const express = require("express");
 const Redis = require("ioredis");
 const cron = require("node-cron");
 const path = require("path");
+const cors = require("cors");
+const fs = require("fs");
 const mongoose = require("mongoose");
+const app = express();
 require("dotenv").config({ path: path.resolve(__dirname, "../.env") });
 
 const queue = require("./queues/job_scrapper_queue");
@@ -254,7 +257,7 @@ const addToQueue = async () => {
       //   const data = "hello";
       //   console.log({ data });
 
-      await queue.add(data, { removeOnComplete: true, removeOnFail: true });
+      queue.add(data, { removeOnComplete: true, removeOnFail: true });
     }
   }
 };
@@ -262,14 +265,53 @@ const addToQueue = async () => {
 // addToQueue();
 
 // Schedule to add entries to the queue every 6 hours
-cron.schedule("0 */6 * * *", () => {
-  for (const tech of techs) {
-    for (const country of countries) {
-      const data = { tech, country };
+// cron.schedule("0 */3 * * *", () => {
+//   for (const tech of techs) {
+//     for (const country of countries) {
+//       const data = { tech, country };
 
-      queue.add(data, { removeOnComplete: true, removeOnFail: true });
-    }
-  }
+//       queue.add(data, { removeOnComplete: true, removeOnFail: true });
+//     }
+//   }
 
-  console.log("Entries added to the queue.");
+//   console.log("Entries added to the queue.");
+// });
+
+// Middleware
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+
+app.use(
+  cors({
+    origin: [`http://localhost:5173`],
+    credentials: true,
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    // preflightContinue: true,
+    // optionsSuccessStatus: 204,
+  })
+);
+
+const port = 5000;
+
+// API routes
+function loadRoutes(app) {
+  const routesDir = path.join(__dirname, "routes");
+
+  fs.readdirSync(routesDir).forEach((file) => {
+    const routePath = path.join(routesDir, file);
+    const routeModule = require(routePath);
+    // console.log(routeModule);
+
+    app.use(routeModule);
+  });
+}
+
+loadRoutes(app);
+
+app.get("/", (req, res) => {
+  res.send("Hello World!");
+});
+
+app.listen(port, () => {
+  console.log(`Example app listening on port ${port}`);
 });
