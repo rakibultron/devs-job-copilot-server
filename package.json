@@ -28,7 +28,7 @@
     "passport": "^0.6.0",
     "portscanner": "^2.2.0",
     "proxy-chain": "^2.4.0",
-    "puppeteer": "^21.5.0",
+    "puppeteer": "^21.6.1",
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-anonymize-ua": "^2.4.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2",
