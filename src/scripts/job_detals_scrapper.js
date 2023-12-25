@@ -4,7 +4,6 @@ const { extractId } = require("../helpers/uniqe_id_from_link");
 
 const Job = require("../models/JobModel");
 const mailQueue = require("../queues/sendMailQueue");
-let jobs = [];
 
 const saveJobInDb = async (jobObj) => {
   //   console.log({ jobObj });
@@ -24,20 +23,20 @@ const saveJobInDb = async (jobObj) => {
       const job = await new Job(jobObj).save();
       console.log("New job found saved to db =======>>>", job);
 
-      mailQueue.add(job, { removeOnComplete: true, removeOnFail: true });
+      //   mailQueue.add(job, { removeOnComplete: true, removeOnFail: true });
     }
   } catch (error) {
     console.log(error);
   }
 };
-const scrapjobDetails = async (page) => {
+const scrapjobDetails = async (page, browser) => {
   try {
-    // const randomValue = generateRandomNumber();
-    // await page.click(page);
-    await page.waitForSelector(".show-more-less-button");
+    const randomValue = generateRandomNumber();
+    await page.waitForTimeout(randomValue);
+
     const showMoreSelector = await page.$(".show-more-less-button");
     if (showMoreSelector) await page.click(".show-more-less-button");
-    await page.waitForSelector(".top-card-layout__title");
+    await page.waitForSelector(".top-card-layout__title", { timeout: 1000 });
 
     const jobTitleSelector = await page.$(".top-card-layout__title");
     const jobLinkSelector = await page.$(".topcard__link");
@@ -52,10 +51,10 @@ const scrapjobDetails = async (page) => {
       "li.description__job-criteria-item:nth-child(2) > span:nth-child(2)"
     );
 
-    const extractedHTML = await page.evaluate(async () => {
-      const element = document.querySelector(".description__text");
-      return element.outerHTML;
-    });
+    // const extractedHTML = await page.evaluate(async () => {
+    //   const element = document.querySelector(".description__text");
+    //   return element.outerHTML;
+    // });
     const jobTitle = await page.evaluate(async (e) => {
       const element = e.textContent;
       return element;
@@ -134,12 +133,16 @@ const scrapjobDetails = async (page) => {
       jobId,
     };
 
-    console.log("job object ===>", jobObj);
-    // jobs.push(jobObj);
+    // console.log("job object ===>", jobObj);
+
     saveJobInDb(jobObj);
   } catch (error) {
-    console.log("something wrong ==================>>>>>>", error);
+    console.log(
+      "something wrong at job_detals_scrapper ==================>>>>>>",
+      error
+    );
+    await browser.close();
   }
 };
 
-module.exports = { scrapjobDetails, jobs };
+module.exports = { scrapjobDetails };
