@@ -77,35 +77,41 @@ queue.process(async (job) => {
 
   const browser = await puppeteer.launch({
     headless: "new",
+
     // userDataDir: "/tmp/myChromeSession",
     args: [
       //   "--disable-features=Cookies",
-      "--disable-web-security",
-      "--disable-features=IsolateOrigins,site-per-process",
-      "--disable-site-isolation-trials",
+      //   "--disable-web-security",
+      //   "--disable-features=IsolateOrigins,site-per-process",
+      //   "--disable-site-isolation-trials",
       "--start-maximized",
       //   "--incognito",
       //   `--proxy-server=${proxyUrl}`,
-      "--disable-extensions",
-      "--disable-plugins",
-      "--disable-sync",
-      "--disable-local-storage",
-      "--disable-session-storage",
+      //   "--disable-extensions",
+      //   "--disable-plugins",
+      //   "--disable-sync",
+      //   "--disable-local-storage",
+      //   "--disable-session-storage",
     ],
+    defaultViewport: null,
   });
   const page = await browser.newPage();
   await page.setDefaultNavigationTimeout(9000);
 
   try {
     console.log("Opening linkedin.....");
-    await page.goto("https://www.linkedin.com");
+    await page.setUserAgent(
+      "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.157 Safari/537.36"
+    );
+    await page.goto("https://www.linkedin.com", { waitUntil: "networkidle2" });
+
     await page.waitForSelector(
       "[data-tracking-control-name='guest_homepage-basic_guest_nav_menu_jobs']"
     );
     await page.click(
       "[data-tracking-control-name='guest_homepage-basic_guest_nav_menu_jobs']"
     );
-    await page.waitForTimeout(randomValue);
+    // await page.waitForTimeout(randomValue);
     await page.waitForSelector("#job-search-bar-keywords");
     await page.type("#job-search-bar-keywords", tech, { delay: 25 });
     await page.waitForSelector("#job-search-bar-location");
@@ -117,28 +123,47 @@ queue.process(async (job) => {
     await page.click(
       "section.typeahead-input:nth-child(2) > button:nth-child(3) > icon:nth-child(2)"
     );
-    await page.waitForTimeout(randomValue);
+    // await page.waitForTimeout(randomValue);
     await page.type("#job-search-bar-location", country, { delay: 25 });
     await page.waitForSelector(
       "button.base-search-bar__submit-btn:nth-child(5)"
     );
     await page.click("button.base-search-bar__submit-btn:nth-child(5)");
-    await page.waitForTimeout(randomValue);
+    await page.waitForTimeout(2000);
     await autoScroll(page);
-
+    await page.waitForTimeout(2000);
     const jobElements = await page.$$(".jobs-search__results-list > li");
     console.log(
       `Found ${jobElements.length} job listings for ${tech} in ${country}`
     );
 
+    // for (const element of jobElements) {
+    //   try {
+    //     //   console.log({ element });
+    //     //   await page.waitForTimeout(2000);
+    //     // await element.evaluate((element) => element.click(), element);
+    //     element.click();
+
+    //     await page.waitForSelector(".show-more-less-button", { timeout: 5000 });
+    //     //   await page.waitForTimeout(randomValue);
+    //     //   await page.waitForSelector(".top-card-layout__title");
+    //     await scrapjobDetails(page);
+    //   } catch (error) {
+    //     console.log(error);
+    //   }
+    // }
     for (const element of jobElements) {
-      await element.click();
-      await page.waitForTimeout(randomValue);
-      await scrapjobDetails(page);
+      try {
+        await page.evaluate((el) => el.click(), element);
+
+        await scrapjobDetails(page, browser);
+      } catch (error) {
+        console.log(error);
+      }
     }
 
     // await scrapjobDetails(page, links, browser);
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(2000);
     await page.close();
     await browser.close();
   } catch (error) {
