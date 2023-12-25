@@ -215,7 +215,6 @@ const countries = [
   "Zimbabwe",
 ];
 
-console.log("redis check ====>", process.env.REDIS_DB_NAME);
 // Connect to MongoDB
 mongoose
   .connect(
@@ -250,7 +249,8 @@ redis.on("error", (err) => {
   console.error("Error connecting to Redis:", err);
 });
 
-const addToQueue = async () => {
+// queue init
+(() => {
   for (const tech of techs) {
     for (const country of countries) {
       const data = { tech, country };
@@ -260,22 +260,20 @@ const addToQueue = async () => {
       queue.add(data, { removeOnComplete: true, removeOnFail: true });
     }
   }
-};
-
-// addToQueue();
+})();
 
 // Schedule to add entries to the queue every 6 hours
-// cron.schedule("0 */3 * * *", () => {
-//   for (const tech of techs) {
-//     for (const country of countries) {
-//       const data = { tech, country };
+cron.schedule("0 */3 * * *", () => {
+  for (const tech of techs) {
+    for (const country of countries) {
+      const data = { tech, country };
 
-//       queue.add(data, { removeOnComplete: true, removeOnFail: true });
-//     }
-//   }
+      queue.add(data, { removeOnComplete: true, removeOnFail: true });
+    }
+  }
 
-//   console.log("Entries added to the queue.");
-// });
+  console.log("Entries added to the queue.");
+});
 
 // Middleware
 app.use(express.urlencoded({ extended: true }));
