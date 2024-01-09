@@ -2,6 +2,7 @@ const express = require("express");
 const Redis = require("ioredis");
 const Bull = require("bull");
 const portscanner = require("portscanner");
+const randomUserAgent = require("random-useragent");
 const path = require("path");
 const mongoose = require("mongoose");
 require("dotenv").config({ path: path.resolve(__dirname, "../../.env") });
@@ -10,6 +11,7 @@ const ProxyChain = require("proxy-chain");
 const StealthPlugin = require("puppeteer-extra-plugin-stealth");
 const { autoScroll } = require("../helpers/autoscroll");
 const { scrapjobDetails } = require("../scripts/job_detals_scrapper");
+// const { el } = require("date-fns/esm/locale");
 
 puppeteer.use(StealthPlugin());
 puppeteer.use(require("puppeteer-extra-plugin-anonymize-ua")());
@@ -84,9 +86,9 @@ queue.process(async (job) => {
       //   "--disable-web-security",
       //   "--disable-features=IsolateOrigins,site-per-process",
       //   "--disable-site-isolation-trials",
-      "--start-maximized",
+      //   "--start-maximized",
       //   "--incognito",
-      //   `--proxy-server=${proxyUrl}`,
+      //   //   `--proxy-server=${proxyUrl}`,
       //   "--disable-extensions",
       //   "--disable-plugins",
       //   "--disable-sync",
@@ -100,9 +102,11 @@ queue.process(async (job) => {
 
   try {
     console.log("Opening linkedin.....");
-    await page.setUserAgent(
-      "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.157 Safari/537.36"
-    );
+    // await page.setUserAgent(
+    //   randomUserAgent.getRandom(function (ua) {
+    //     return ua.browserName === "Chrome";
+    //   })
+    // );
     await page.goto("https://www.linkedin.com", { waitUntil: "networkidle2" });
 
     await page.waitForSelector(
@@ -111,9 +115,9 @@ queue.process(async (job) => {
     await page.click(
       "[data-tracking-control-name='guest_homepage-basic_guest_nav_menu_jobs']"
     );
-    // await page.waitForTimeout(randomValue);
-    await page.waitForSelector("#job-search-bar-keywords");
-    await page.type("#job-search-bar-keywords", tech, { delay: 25 });
+    await page.waitForTimeout(randomValue);
+    await page.waitForSelector("#job-search-bar-keywords", { timeout: 5000 });
+    await page.type("#job-search-bar-keywords", tech, { delay: 100 });
     await page.waitForSelector("#job-search-bar-location");
     await page.click("#job-search-bar-location");
     await page.waitForSelector(
@@ -123,13 +127,17 @@ queue.process(async (job) => {
     await page.click(
       "section.typeahead-input:nth-child(2) > button:nth-child(3) > icon:nth-child(2)"
     );
-    // await page.waitForTimeout(randomValue);
-    await page.type("#job-search-bar-location", country, { delay: 25 });
+    await page.waitForTimeout(randomValue);
+    await page.type("#job-search-bar-location", country, { delay: 200 });
     await page.waitForSelector(
       "button.base-search-bar__submit-btn:nth-child(5)"
     );
     await page.click("button.base-search-bar__submit-btn:nth-child(5)");
     await page.waitForTimeout(2000);
+
+    // Example usage:
+    console.log("Start");
+
     await autoScroll(page);
     await page.waitForTimeout(2000);
     const jobElements = await page.$$(".jobs-search__results-list > li");
@@ -137,30 +145,117 @@ queue.process(async (job) => {
       `Found ${jobElements.length} job listings for ${tech} in ${country}`
     );
 
-    // for (const element of jobElements) {
-    //   try {
-    //     //   console.log({ element });
-    //     //   await page.waitForTimeout(2000);
-    //     // await element.evaluate((element) => element.click(), element);
-    //     element.click();
-
-    //     await page.waitForSelector(".show-more-less-button", { timeout: 5000 });
-    //     //   await page.waitForTimeout(randomValue);
-    //     //   await page.waitForSelector(".top-card-layout__title");
-    //     await scrapjobDetails(page);
-    //   } catch (error) {
-    //     console.log(error);
-    //   }
-    // }
     for (const element of jobElements) {
       try {
-        await page.evaluate((el) => el.click(), element);
+        //   console.log({ element });
+        //   await page.waitForTimeout(2000);
+        // await element.evaluate((element) => element.click(), element);
+        element.click();
+        await page.waitForTimeout(2000);
 
-        await scrapjobDetails(page, browser);
+        let isShowButton = await page.evaluate(() => {
+          let el = document.querySelector(".show-more-less-button");
+          return el ? el : false;
+        });
+        if (isShowButton) {
+          await page.waitForSelector(".show-more-less-button", {
+            timeout: 5000,
+          });
+          //   await page.waitForTimeout(randomValue);
+          //   await page.waitForSelector(".top-card-layout__title");
+          await scrapjobDetails(page);
+        } else {
+          console.log("There is no showmore button.");
+        }
       } catch (error) {
         console.log(error);
       }
     }
+    // for (const element of jobElements) {
+    //   //   try {
+    //   //     await page.waitForTimeout(500);
+    //   //     // await page.evaluate((el) => el.click(), element);
+
+    //   //     await page.waitForTimeout(2000);
+
+    //   //     await Promise.all([page.waitForNavigation(), element.click()]);
+    //   //     const showmoreBtn = await page.$(".show-more-less-button");
+    //   //     if (showmoreBtn) await page.click(".show-more-less-button");
+    //   //     scrapjobDetails(page, browser);
+    //   //   } catch (error) {
+    //   //     console.log(error);
+    //   //   }
+
+    //   //   try {
+    //   //     await page.waitForTimeout(2000);
+    //   //     // Check if the element is clickable
+    //   //     const isClickable = await element.isIntersectingViewport();
+    //   //     if (isClickable) {
+    //   //       //   await Promise.all([page.waitForNavigation(), element.click()]);
+    //   //       await Promise.all([
+    //   //         // page.waitForNavigation(),
+    //   //         page.evaluate((el) => el.click(), element),
+    //   //       ]);
+    //   //       const showmoreBtn = await page.$(".show-more-less-button");
+    //   //       if (showmoreBtn) await page.click(".show-more-less-button");
+    //   //       await scrapjobDetails(page, browser);
+    //   //     } else {
+    //   //       console.log("Element is not clickable.");
+    //   //     }
+    //   //   } catch (error) {
+    //   //     console.log(error);
+    //   //   }
+    //   try {
+    //     await page.waitForTimeout(500);
+
+    //     //   #main-content > section > ul > li:nth-child(1) > div
+    //     // Check if the element is still in the DOM
+    //     const isElementPresent = await page.evaluate(
+    //       (el) => document.body.contains(el),
+    //       element
+    //     );
+
+    //     if (isElementPresent) {
+    //       //   #main-content > section > ul > li:nth-child(1) > div > a
+    //       // Check if the element is clickable
+    //       //   const isClickable = await element.isIntersectingViewport();
+    //       //   await Promise.all([page.waitForNavigation(), element.click()]);
+    //       //   const showmoreBtn = await page.$(".show-more-less-button");
+    //       //   if (showmoreBtn) await page.click(".show-more-less-button");
+    //       //   await element.evaluate((element) => element.click(), element);
+    //       //   const jobLinkSelector = await page.$(".topcard__link");
+    //       //   const jobLink = await page.evaluate(async (e) => {
+    //       //     const link = e.getAttribute("href");
+    //       //     return link;
+    //       //   }, element);
+    //       const anchorElement = await element.$("a");
+    //       const hrefHandle = await anchorElement.getProperty("href");
+    //       const hrefValue = await hrefHandle.jsonValue();
+    //       //   console.log({ hrefValue });
+
+    //       const jobpage = await browser.newPage();
+    //       await page.waitForTimeout(1000);
+    //       await jobpage.goto(hrefValue, { waitUntil: "networkidle2" });
+
+    //       //   console.log({ jobLink });
+    //       //   await page.waitForTimeout(3000);
+    //       await scrapjobDetails(jobpage, browser);
+    //       await jobpage.close();
+    //       //   if (isClickable) {
+    //       //     await Promise.all([page.waitForNavigation(), element.click()]);
+    //       //     const showmoreBtn = await page.$(".show-more-less-button");
+    //       //     if (showmoreBtn) await page.click(".show-more-less-button");
+    //       //     await scrapjobDetails(page, browser);
+    //       //   } else {
+    //       //     console.log("Element is not clickable.");
+    //       //   }
+    //     } else {
+    //       console.log("Element is not present in the DOM.");
+    //     }
+    //   } catch (error) {
+    //     console.log(error);
+    //   }
+    // }
 
     // await scrapjobDetails(page, links, browser);
     await page.waitForTimeout(2000);
