@@ -78,7 +78,7 @@ queue.process(async (job) => {
   const randomValue = await generateRandomNumber();
 
   const browser = await puppeteer.launch({
-    headless: "new",
+    headless: false,
 
     // userDataDir: "/tmp/myChromeSession",
     args: [
@@ -86,7 +86,7 @@ queue.process(async (job) => {
       //   "--disable-web-security",
       //   "--disable-features=IsolateOrigins,site-per-process",
       //   "--disable-site-isolation-trials",
-      //   "--start-maximized",
+      "--start-maximized",
       //   "--incognito",
       //   //   `--proxy-server=${proxyUrl}`,
       //   "--disable-extensions",
@@ -98,7 +98,7 @@ queue.process(async (job) => {
     defaultViewport: null,
   });
   const page = await browser.newPage();
-  await page.setDefaultNavigationTimeout(9000);
+  //   await page.setDefaultNavigationTimeout(9000);
 
   try {
     console.log("Opening linkedin.....");
@@ -147,117 +147,27 @@ queue.process(async (job) => {
 
     for (const element of jobElements) {
       try {
-        //   console.log({ element });
-        //   await page.waitForTimeout(2000);
-        // await element.evaluate((element) => element.click(), element);
-        element.click();
-        await page.waitForTimeout(2000);
+        await element.click();
+        await page.waitForTimeout(1000);
+        await scrapjobDetails(page);
 
-        let isShowButton = await page.evaluate(() => {
-          let el = document.querySelector(".show-more-less-button");
-          return el ? el : false;
-        });
-        if (isShowButton) {
-          await page.waitForSelector(".show-more-less-button", {
-            timeout: 5000,
-          });
-          //   await page.waitForTimeout(randomValue);
-          //   await page.waitForSelector(".top-card-layout__title");
-          await scrapjobDetails(page);
-        } else {
-          console.log("There is no showmore button.");
-        }
+        // let isShowButton = await page.evaluate(() => {
+        //   let el = document.querySelector(".show-more-less-button");
+        //   return el ? el : false;
+        // });
+        // if (isShowButton) {
+        //   await page.waitForSelector(".show-more-less-button", {
+        //     timeout: 5000,
+        //   });
+
+        // } else {
+        //   console.log("There is no showmore button.");
+        // }
       } catch (error) {
         console.log(error);
       }
     }
-    // for (const element of jobElements) {
-    //   //   try {
-    //   //     await page.waitForTimeout(500);
-    //   //     // await page.evaluate((el) => el.click(), element);
 
-    //   //     await page.waitForTimeout(2000);
-
-    //   //     await Promise.all([page.waitForNavigation(), element.click()]);
-    //   //     const showmoreBtn = await page.$(".show-more-less-button");
-    //   //     if (showmoreBtn) await page.click(".show-more-less-button");
-    //   //     scrapjobDetails(page, browser);
-    //   //   } catch (error) {
-    //   //     console.log(error);
-    //   //   }
-
-    //   //   try {
-    //   //     await page.waitForTimeout(2000);
-    //   //     // Check if the element is clickable
-    //   //     const isClickable = await element.isIntersectingViewport();
-    //   //     if (isClickable) {
-    //   //       //   await Promise.all([page.waitForNavigation(), element.click()]);
-    //   //       await Promise.all([
-    //   //         // page.waitForNavigation(),
-    //   //         page.evaluate((el) => el.click(), element),
-    //   //       ]);
-    //   //       const showmoreBtn = await page.$(".show-more-less-button");
-    //   //       if (showmoreBtn) await page.click(".show-more-less-button");
-    //   //       await scrapjobDetails(page, browser);
-    //   //     } else {
-    //   //       console.log("Element is not clickable.");
-    //   //     }
-    //   //   } catch (error) {
-    //   //     console.log(error);
-    //   //   }
-    //   try {
-    //     await page.waitForTimeout(500);
-
-    //     //   #main-content > section > ul > li:nth-child(1) > div
-    //     // Check if the element is still in the DOM
-    //     const isElementPresent = await page.evaluate(
-    //       (el) => document.body.contains(el),
-    //       element
-    //     );
-
-    //     if (isElementPresent) {
-    //       //   #main-content > section > ul > li:nth-child(1) > div > a
-    //       // Check if the element is clickable
-    //       //   const isClickable = await element.isIntersectingViewport();
-    //       //   await Promise.all([page.waitForNavigation(), element.click()]);
-    //       //   const showmoreBtn = await page.$(".show-more-less-button");
-    //       //   if (showmoreBtn) await page.click(".show-more-less-button");
-    //       //   await element.evaluate((element) => element.click(), element);
-    //       //   const jobLinkSelector = await page.$(".topcard__link");
-    //       //   const jobLink = await page.evaluate(async (e) => {
-    //       //     const link = e.getAttribute("href");
-    //       //     return link;
-    //       //   }, element);
-    //       const anchorElement = await element.$("a");
-    //       const hrefHandle = await anchorElement.getProperty("href");
-    //       const hrefValue = await hrefHandle.jsonValue();
-    //       //   console.log({ hrefValue });
-
-    //       const jobpage = await browser.newPage();
-    //       await page.waitForTimeout(1000);
-    //       await jobpage.goto(hrefValue, { waitUntil: "networkidle2" });
-
-    //       //   console.log({ jobLink });
-    //       //   await page.waitForTimeout(3000);
-    //       await scrapjobDetails(jobpage, browser);
-    //       await jobpage.close();
-    //       //   if (isClickable) {
-    //       //     await Promise.all([page.waitForNavigation(), element.click()]);
-    //       //     const showmoreBtn = await page.$(".show-more-less-button");
-    //       //     if (showmoreBtn) await page.click(".show-more-less-button");
-    //       //     await scrapjobDetails(page, browser);
-    //       //   } else {
-    //       //     console.log("Element is not clickable.");
-    //       //   }
-    //     } else {
-    //       console.log("Element is not present in the DOM.");
-    //     }
-    //   } catch (error) {
-    //     console.log(error);
-    //   }
-    // }
-
-    // await scrapjobDetails(page, links, browser);
     await page.waitForTimeout(2000);
     await page.close();
     await browser.close();
