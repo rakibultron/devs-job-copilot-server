@@ -1,12 +1,11 @@
-const express = require("express");
 const Redis = require("ioredis");
 const Bull = require("bull");
-const portscanner = require("portscanner");
+const puppeteerPrefs = require("puppeteer-extra-plugin-user-preferences");
 const path = require("path");
-const mongoose = require("mongoose");
+
 require("dotenv").config({ path: path.resolve(__dirname, "../../.env") });
 const puppeteer = require("puppeteer-extra");
-const ProxyChain = require("proxy-chain");
+
 const StealthPlugin = require("puppeteer-extra-plugin-stealth");
 const { autoScroll } = require("../helpers/autoscroll");
 const { scrapjobDetails } = require("../scripts/job_detals_scrapper");
@@ -74,9 +73,20 @@ queue.process(async (job) => {
   }
 
   const randomValue = await generateRandomNumber();
-
+  await puppeteer.use(
+    puppeteerPrefs({
+      userPrefs: {
+        devtools: {
+          preferences: {
+            currentDockState: '"bottom"',
+          },
+        },
+      },
+    })
+  );
   const browser = await puppeteer.launch({
-    headless: "new",
+    headless: false,
+    // devtools: true,
     // userDataDir: "/tmp/myChromeSession",
     args: [
       //   "--disable-features=Cookies",
@@ -91,6 +101,8 @@ queue.process(async (job) => {
       "--disable-sync",
       "--disable-local-storage",
       "--disable-session-storage",
+      "--no-remote-debugging",
+      "--remote-debugging-port=0",
     ],
   });
   const page = await browser.newPage();
@@ -99,14 +111,20 @@ queue.process(async (job) => {
   try {
     console.log("Opening linkedin.....");
     await page.goto("https://www.linkedin.com");
+    // await page.waitForNavigation({ wait });
+    await page.waitForTimeout(randomValue);
     await page.waitForSelector(
       "[data-tracking-control-name='guest_homepage-basic_guest_nav_menu_jobs']"
     );
     await page.click(
       "[data-tracking-control-name='guest_homepage-basic_guest_nav_menu_jobs']"
     );
-    await page.waitForTimeout(randomValue);
-    await page.waitForSelector("#job-search-bar-keywords");
+    // await page.waitForNavigation({
+    //   waitUntil: "networkidle2",
+    // });
+
+    // await page.waitForTimeout(randomValue);
+    // await page.waitForSelector("#job-search-bar-keywords");
     await page.type("#job-search-bar-keywords", tech, { delay: 25 });
     await page.waitForSelector("#job-search-bar-location");
     await page.click("#job-search-bar-location");

@@ -220,7 +220,9 @@ console.log("redis check ====>", process.env.REDIS_DB_NAME);
 mongoose
   .connect(
     `mongodb+srv://${process.env.DB_USER_NAME}:${process.env.DB_PASSWORD}@my-cluster.wlkgtiv.mongodb.net/${process.env.DB_NAME}?retryWrites=true&w=majority`,
+
     {
+      //   urlencoded: true,
       //   useNewUrlParser: true,
       //   useUnifiedTopology: true,
     }
@@ -262,7 +264,7 @@ const addToQueue = async () => {
   }
 };
 
-// addToQueue();
+addToQueue();
 
 // Schedule to add entries to the queue every 6 hours
 // cron.schedule("0 */3 * * *", () => {

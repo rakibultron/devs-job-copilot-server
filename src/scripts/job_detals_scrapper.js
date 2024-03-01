@@ -24,7 +24,7 @@ const saveJobInDb = async (jobObj) => {
       const job = await new Job(jobObj).save();
       console.log("New job found saved to db =======>>>", job);
 
-      mailQueue.add(job, { removeOnComplete: true, removeOnFail: true });
+      //   mailQueue.add(job, { removeOnComplete: true, removeOnFail: true });
     }
   } catch (error) {
     console.log(error);
@@ -34,7 +34,7 @@ const scrapjobDetails = async (page) => {
   try {
     // const randomValue = generateRandomNumber();
     // await page.click(page);
-    await page.waitForSelector(".show-more-less-button");
+    // await page.waitForSelector(".show-more-less-button");
     const showMoreSelector = await page.$(".show-more-less-button");
     if (showMoreSelector) await page.click(".show-more-less-button");
     await page.waitForSelector(".top-card-layout__title");
