@@ -4,7 +4,6 @@ const { extractId } = require("../helpers/uniqe_id_from_link");
 
 const Job = require("../models/JobModel");
 const mailQueue = require("../queues/sendMailQueue");
-let jobs = [];
 
 const saveJobInDb = async (jobObj) => {
   //   console.log({ jobObj });
@@ -30,116 +29,123 @@ const saveJobInDb = async (jobObj) => {
     console.log(error);
   }
 };
-const scrapjobDetails = async (page) => {
+const scrapjobDetails = async (page, browser) => {
   try {
     // const randomValue = generateRandomNumber();
+<<<<<<< HEAD
     // await page.click(page);
     // await page.waitForSelector(".show-more-less-button");
     const showMoreSelector = await page.$(".show-more-less-button");
     if (showMoreSelector) await page.click(".show-more-less-button");
     await page.waitForSelector(".top-card-layout__title");
+=======
+    await page.waitForTimeout(100);
+
+    // const showMoreSelector = await page.$(".show-more-less-button");
+    // if (showMoreSelector) {
+    //   await page.click(".show-more-less-button");
+    //   console.log("Show more button clcked ====>");
+    // }
+    await page.waitForSelector(".top-card-layout__title", { timeout: 1000 });
+>>>>>>> 1f1fed7b428e86b2942c24ea4c78165a60c7698d
 
     const jobTitleSelector = await page.$(".top-card-layout__title");
-    const jobLinkSelector = await page.$(".topcard__link");
-    const companySelector = await page.$(".topcard__org-name-link");
-    const locationSelector = await page.$("span.topcard__flavor:nth-child(2)");
-    const postedAtSelector = await page.$(".posted-time-ago__text");
-    const applicatsSelector = await page.$(".num-applicants__caption");
-    const strengthSelector = await page.$(
-      "li.description__job-criteria-item:nth-child(1) > span:nth-child(2)"
-    );
-    const jobtypeSelector = await page.$(
-      "li.description__job-criteria-item:nth-child(2) > span:nth-child(2)"
-    );
-
-    const extractedHTML = await page.evaluate(async () => {
-      const element = document.querySelector(".description__text");
-      return element.outerHTML;
+    await page.waitForSelector(".topcard__link", {
+      timeout: 3000,
     });
+
+    // const jobLinkSelector = await page.$(".topcard__link");
+    // const companySelector = await page.$(".topcard__org-name-link");
+    // const locationSelector = await page.$("span.topcard__flavor:nth-child(2)");
+    // const postedAtSelector = await page.$(".posted-time-ago__text");
+
+    // const applicatsSelector = await page.$(".num-applicants__caption");
+    // const strengthSelector = await page.$(
+    //   "li.description__job-criteria-item:nth-child(1) > span:nth-child(2)"
+    // );
+    // const jobtypeSelector = await page.$(
+    //   "li.description__job-criteria-item:nth-child(2) > span:nth-child(2)"
+    // );
+
+    // // const extractedHTML = await page.evaluate(async () => {
+    // //   const element = document.querySelector(".description__text");
+    // //   return element.outerHTML;
+    // // });
     const jobTitle = await page.evaluate(async (e) => {
       const element = e.textContent;
       return element;
     }, jobTitleSelector);
-    const jobLink = await page.evaluate(async (e) => {
-      const element = e.getAttribute("href");
-      return element;
-    }, jobLinkSelector);
-    const company = await page.evaluate(async (e) => {
-      const element = e.textContent.trim();
-      return element;
-    }, companySelector);
-    const companyLink = await page.evaluate(async (e) => {
-      const element = e.getAttribute("href");
-      return element;
-    }, companySelector);
-    const location = await page.evaluate(async (e) => {
-      const element = e.textContent.trim();
-      return element;
-    }, locationSelector);
-    const postedAt = await page.evaluate(async (e) => {
-      const element = e.textContent.trim();
-      return element;
-    }, postedAtSelector);
-    const applicants = await page.evaluate(async (e) => {
-      const element = e.textContent.trim();
-      return element;
-    }, applicatsSelector);
-    const strength = await page.evaluate(async (e) => {
-      const element = e.textContent.trim();
-      return element;
-    }, strengthSelector);
-    const jobtype = await page.evaluate(async (e) => {
-      const element = e.textContent.trim();
-      return element;
-    }, jobtypeSelector);
-    const parts = jobLink.split("?");
-    const modifiedJobUrl = parts[0];
-    const jobId = await extractId(modifiedJobUrl);
-    // console.log("details ===> ", {
+    // const jobLink = await page.evaluate(async (e) => {
+    //   const element = e.getAttribute("href");
+    //   return element;
+    // }, jobLinkSelector);
+    // const company = await page.evaluate(async (e) => {
+    //   const element = e.textContent.trim();
+    //   return element;
+    // }, companySelector);
+    // const companyLink = await page.evaluate(async (e) => {
+    //   const element = e.getAttribute("href");
+    //   return element;
+    // }, companySelector);
+    // const location = await page.evaluate(async (e) => {
+    //   const element = e.textContent.trim();
+    //   return element;
+    // }, locationSelector);
+    // const postedAt = await page.evaluate(async (e) => {
+    //   const element = e.textContent.trim();
+    //   return element;
+    // }, postedAtSelector);
+    // const applicants = await page.evaluate(async (e) => {
+    //   const element = e.textContent.trim();
+    //   return element;
+    // }, applicatsSelector);
+    // const strength = await page.evaluate(async (e) => {
+    //   const element = e.textContent.trim();
+    //   return element;
+    // }, strengthSelector);
+    // const jobtype = await page.evaluate(async (e) => {
+    //   const element = e.textContent.trim();
+    //   return element;
+    // }, jobtypeSelector);
+    // const parts = jobLink.split("?");
+    // const modifiedJobUrl = parts[0];
+    // const jobId = await extractId(modifiedJobUrl);
+    // // console.log("details ===> ", {
+    // //   jobTitle,
+    // //   company,
+    // //   location,
+    // //   postedAt,
+    // //   applicants,
+    // //   strength,
+    // //   jobtype,
+    // //   companyLink,
+    // //   jobLink: modifiedJobUrl,
+    // //   jobId,
+    // // });
+    console.log({ jobTitle });
+    // const jobObj = {
     //   jobTitle,
     //   company,
     //   location,
-    //   postedAt,
+    //   postedAt: extractNumberAndTime(postedAt),
     //   applicants,
     //   strength,
     //   jobtype,
     //   companyLink,
-    //   jobLink: modifiedJobUrl,
+    //   jobLink,
     //   jobId,
-    // });
-    function generateRandomNumber() {
-      // Generate a random number between 0 and 1
-      const randomNumber = Math.random();
+    // };
 
-      // Scale the random number to be between 2000 and 5000
-      const min = 1000;
-      const max = 4000;
-      const scaledNumber = min + randomNumber * (max - min);
+    // console.log("job object ===>", jobObj);
 
-      // Round the result to an integer if needed
-      const roundedNumber = Math.round(scaledNumber);
-
-      return roundedNumber;
-    }
-    const jobObj = {
-      jobTitle,
-      company,
-      location,
-      postedAt: extractNumberAndTime(postedAt),
-      applicants,
-      strength,
-      jobtype,
-      companyLink,
-      jobLink: modifiedJobUrl,
-      jobId,
-    };
-
-    console.log("job object ===>", jobObj);
-    // jobs.push(jobObj);
-    saveJobInDb(jobObj);
+    // saveJobInDb(jobObj);
   } catch (error) {
-    console.log("something wrong ==================>>>>>>", error);
+    console.log(
+      "something wrong at job_detals_scrapper ==================>>>>>>",
+      error
+    );
+    // await browser.close();
   }
 };
 
-module.exports = { scrapjobDetails, jobs };
+module.exports = { scrapjobDetails };

@@ -1,6 +1,11 @@
 const Redis = require("ioredis");
 const Bull = require("bull");
+<<<<<<< HEAD
 const puppeteerPrefs = require("puppeteer-extra-plugin-user-preferences");
+=======
+const portscanner = require("portscanner");
+const randomUserAgent = require("random-useragent");
+>>>>>>> 1f1fed7b428e86b2942c24ea4c78165a60c7698d
 const path = require("path");
 
 require("dotenv").config({ path: path.resolve(__dirname, "../../.env") });
@@ -9,6 +14,7 @@ const puppeteer = require("puppeteer-extra");
 const StealthPlugin = require("puppeteer-extra-plugin-stealth");
 const { autoScroll } = require("../helpers/autoscroll");
 const { scrapjobDetails } = require("../scripts/job_detals_scrapper");
+// const { el } = require("date-fns/esm/locale");
 
 puppeteer.use(StealthPlugin());
 puppeteer.use(require("puppeteer-extra-plugin-anonymize-ua")());
@@ -86,15 +92,20 @@ queue.process(async (job) => {
   );
   const browser = await puppeteer.launch({
     headless: false,
+<<<<<<< HEAD
     // devtools: true,
+=======
+
+>>>>>>> 1f1fed7b428e86b2942c24ea4c78165a60c7698d
     // userDataDir: "/tmp/myChromeSession",
     args: [
       //   "--disable-features=Cookies",
-      "--disable-web-security",
-      "--disable-features=IsolateOrigins,site-per-process",
-      "--disable-site-isolation-trials",
+      //   "--disable-web-security",
+      //   "--disable-features=IsolateOrigins,site-per-process",
+      //   "--disable-site-isolation-trials",
       "--start-maximized",
       //   "--incognito",
+<<<<<<< HEAD
       //   `--proxy-server=${proxyUrl}`,
       "--disable-extensions",
       "--disable-plugins",
@@ -103,22 +114,42 @@ queue.process(async (job) => {
       "--disable-session-storage",
       "--no-remote-debugging",
       "--remote-debugging-port=0",
+=======
+      //   //   `--proxy-server=${proxyUrl}`,
+      //   "--disable-extensions",
+      //   "--disable-plugins",
+      //   "--disable-sync",
+      //   "--disable-local-storage",
+      //   "--disable-session-storage",
+>>>>>>> 1f1fed7b428e86b2942c24ea4c78165a60c7698d
     ],
+    defaultViewport: null,
   });
   const page = await browser.newPage();
-  await page.setDefaultNavigationTimeout(9000);
+  //   await page.setDefaultNavigationTimeout(9000);
 
   try {
     console.log("Opening linkedin.....");
+<<<<<<< HEAD
     await page.goto("https://www.linkedin.com");
     // await page.waitForNavigation({ wait });
     await page.waitForTimeout(randomValue);
+=======
+    // await page.setUserAgent(
+    //   randomUserAgent.getRandom(function (ua) {
+    //     return ua.browserName === "Chrome";
+    //   })
+    // );
+    await page.goto("https://www.linkedin.com", { waitUntil: "networkidle2" });
+
+>>>>>>> 1f1fed7b428e86b2942c24ea4c78165a60c7698d
     await page.waitForSelector(
       "[data-tracking-control-name='guest_homepage-basic_guest_nav_menu_jobs']"
     );
     await page.click(
       "[data-tracking-control-name='guest_homepage-basic_guest_nav_menu_jobs']"
     );
+<<<<<<< HEAD
     // await page.waitForNavigation({
     //   waitUntil: "networkidle2",
     // });
@@ -126,6 +157,11 @@ queue.process(async (job) => {
     // await page.waitForTimeout(randomValue);
     // await page.waitForSelector("#job-search-bar-keywords");
     await page.type("#job-search-bar-keywords", tech, { delay: 25 });
+=======
+    await page.waitForTimeout(randomValue);
+    await page.waitForSelector("#job-search-bar-keywords", { timeout: 5000 });
+    await page.type("#job-search-bar-keywords", tech, { delay: 100 });
+>>>>>>> 1f1fed7b428e86b2942c24ea4c78165a60c7698d
     await page.waitForSelector("#job-search-bar-location");
     await page.click("#job-search-bar-location");
     await page.waitForSelector(
@@ -136,27 +172,47 @@ queue.process(async (job) => {
       "section.typeahead-input:nth-child(2) > button:nth-child(3) > icon:nth-child(2)"
     );
     await page.waitForTimeout(randomValue);
-    await page.type("#job-search-bar-location", country, { delay: 25 });
+    await page.type("#job-search-bar-location", country, { delay: 200 });
     await page.waitForSelector(
       "button.base-search-bar__submit-btn:nth-child(5)"
     );
     await page.click("button.base-search-bar__submit-btn:nth-child(5)");
-    await page.waitForTimeout(randomValue);
-    await autoScroll(page);
+    await page.waitForTimeout(2000);
 
+    // Example usage:
+    console.log("Start");
+
+    await autoScroll(page);
+    await page.waitForTimeout(2000);
     const jobElements = await page.$$(".jobs-search__results-list > li");
     console.log(
       `Found ${jobElements.length} job listings for ${tech} in ${country}`
     );
 
     for (const element of jobElements) {
-      await element.click();
-      await page.waitForTimeout(randomValue);
-      await scrapjobDetails(page);
+      try {
+        await element.click();
+        await page.waitForTimeout(1000);
+        await scrapjobDetails(page);
+
+        // let isShowButton = await page.evaluate(() => {
+        //   let el = document.querySelector(".show-more-less-button");
+        //   return el ? el : false;
+        // });
+        // if (isShowButton) {
+        //   await page.waitForSelector(".show-more-less-button", {
+        //     timeout: 5000,
+        //   });
+
+        // } else {
+        //   console.log("There is no showmore button.");
+        // }
+      } catch (error) {
+        console.log(error);
+      }
     }
 
-    // await scrapjobDetails(page, links, browser);
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(2000);
     await page.close();
     await browser.close();
   } catch (error) {
